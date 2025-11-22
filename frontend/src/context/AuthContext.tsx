@@ -1,83 +1,89 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    ReactNode,
+} from "react";
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signUp: (email: string, password: string, loginId: string) => Promise<{ error: any }>;
-  signIn: (loginId: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: "WAREHOUSE_STAFF" | "INVENTORY_MANAGER" | "ADMIN";
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
-        setUser(session?.user ?? null);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signUp = async (email: string, password: string, loginId: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          login_id: loginId,
-        },
-      },
-    });
-    return { error };
-  };
-
-  const signIn = async (loginId: string, password: string) => {
-    const { data: users, error: fetchError } = await supabase
-      .from('user_profiles')
-      .select('email')
-      .eq('login_id', loginId)
-      .maybeSingle();
-
-    if (fetchError || !users) {
-      return { error: { message: 'Invalid login ID or password' } };
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: users.email,
-      password,
-    });
-
-    return { error };
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+interface AuthContextProps {
+    isAuthenticated: boolean;
+    user: User | null;
+    login: (token: string, userData?: User) => void;
+    logout: () => void;
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    // Restore authentication state
+    useEffect(() => {
+        try {
+            const token = localStorage.getItem("token");
+            const storedUser = localStorage.getItem("user");
+
+            if (
+                token &&
+                storedUser &&
+                storedUser !== "undefined" &&
+                storedUser !== "null"
+            ) {
+                setUser(JSON.parse(storedUser));
+                setIsAuthenticated(true);
+            }
+        } catch (error) {
+            console.error("Error restoring user from localStorage:", error);
+            localStorage.removeItem("user");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Login handler
+    const login = (token: string, userData?: User) => {
+        localStorage.setItem("token", token);
+        if (userData) {
+            localStorage.setItem("user", JSON.stringify(userData));
+            setUser(userData);
+        } else {
+            console.warn("⚠ No user data provided during login");
+        }
+        setIsAuthenticated(true);
+    };
+
+    // Logout handler
+    const logout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setIsAuthenticated(false);
+        setUser(null);
+    };
+
+    // 🔁 Show loading only during restore (not on login/signout)
+    if (loading) return <div>Loading authentication...</div>;
+
+    return (
+        <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+// Custom hook to use auth context
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context)
+        throw new Error("useAuth must be used within an AuthProvider");
+    return context;
+};

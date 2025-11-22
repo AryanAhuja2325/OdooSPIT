@@ -1,66 +1,59 @@
-import { useEffect, useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function AppContent() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const { user, loading } = useAuth();
+import { AppLayout } from "./components/layout/AppLayout";
+import Dashboard from "./pages/Dashboard";
+import Operations from "./pages/Operations";
+import Products from "./pages/Products";
+import Warehouses from "./pages/Warehouses";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
+import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-    };
+const queryClient = new QueryClient();
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-    window.addEventListener('popstate', handlePopState);
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-    const originalPushState = window.history.pushState;
-    window.history.pushState = function (...args) {
-      originalPushState.apply(window.history, args);
-      setCurrentPath(window.location.pathname);
-    };
+            {/* Protected */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/operations" element={<Operations />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/warehouses" element={<Warehouses />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/suppliers" element={<Suppliers />} />
+            </Route>
 
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (currentPath === '/login') {
-    if (user) {
-      window.history.pushState({}, '', '/');
-      setCurrentPath('/');
-      return <Home />;
-    }
-    return <Login />;
-  }
-
-  if (currentPath === '/signup') {
-    if (user) {
-      window.history.pushState({}, '', '/');
-      setCurrentPath('/');
-      return <Home />;
-    }
-    return <Signup />;
-  }
-
-  return <Home />;
-}
-
-function App() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
-}
+            {/* Catch all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
