@@ -1,48 +1,51 @@
-import { UserRole } from "@/types";
+import { User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Menu, User } from "lucide-react";
+import { UserRole } from "@/types";
+import { Menu } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   userRole: UserRole;
-  onRoleChange: (role: UserRole) => void;
   onMenuClick: () => void;
 }
 
-export const Header = ({ userRole, onRoleChange, onMenuClick }: HeaderProps) => {
+export const Header = ({ userRole, onMenuClick }: HeaderProps) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout(); // Clear auth
+    navigate("/login"); // Redirect
+  };
+
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden"
+      {/* Mobile menu toggle */}
+      <button
+        className="lg:hidden p-2 rounded-md hover:bg-muted"
         onClick={onMenuClick}
       >
         <Menu className="h-5 w-5" />
-      </Button>
+      </button>
 
-      <div className="hidden lg:block" />
-
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 ml-auto">
+        {/* Display role */}
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
-          <Select value={userRole} onValueChange={(value) => onRoleChange(value as UserRole)}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="inventory_manager">Inventory Manager</SelectItem>
-              <SelectItem value="warehouse_staff">Warehouse Staff</SelectItem>
-            </SelectContent>
-          </Select>
+          <Badge variant="outline">{userRole.toUpperCase()}</Badge>
         </div>
+
+        {/* Logout button */}
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleLogout}
+          className="ml-4"
+        >
+          Logout
+        </Button>
       </div>
     </header>
   );

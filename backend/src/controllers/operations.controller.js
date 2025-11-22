@@ -177,6 +177,8 @@ async function getOperations(req, res) {
             .populate("supplier", "name email")
             .populate("customer", "name email")
             .populate("items.product", "name sku")
+            .populate("sourceWarehouse", "name")
+            .populate("destinationWarehouse", "name")
             .sort({ createdAt: -1 });
 
         res.status(200).json(operations);

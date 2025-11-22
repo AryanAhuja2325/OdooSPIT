@@ -1,4 +1,5 @@
 const Warehouse = require("../models/warehouse.model");
+const Stock = require("../models/stock.model");
 
 async function createWarehouse(req, res) {
     try {
@@ -14,14 +15,36 @@ async function createWarehouse(req, res) {
     }
 }
 
+
 async function getWarehouses(req, res) {
     try {
-        const warehouses = await Warehouse.find().sort({ createdAt: -1 });
-        res.status(200).json(warehouses);
+        // Get warehouse list
+        const warehouses = await Warehouse.find();
+
+        // For each warehouse, compute stock sum
+        const enriched = await Promise.all(
+            warehouses.map(async (wh) => {
+                const stockEntries = await Stock.find({ warehouse: wh._id });
+                const stockSum = stockEntries.reduce(
+                    (sum, s) => sum + (s.quantity || 0),
+                    0
+                );
+
+                return {
+                    ...wh._doc,
+                    stockSum,
+                };
+            })
+        );
+
+        res.status(200).json(enriched);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 }
+
+module.exports = { getWarehouses };
+
 
 async function getWarehouse(req, res) {
     try {

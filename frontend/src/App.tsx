@@ -18,6 +18,7 @@ import Signup from "./pages/Signup";
 const queryClient = new QueryClient();
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import StockLogs from "./pages/StockLogs";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/warehouses" element={<Warehouses />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/suppliers" element={<Suppliers />} />
+              <Route path="/stock-logs" element={<StockLogs />} />
             </Route>
 
             {/* Catch all */}

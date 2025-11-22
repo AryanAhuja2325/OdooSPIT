@@ -1,69 +1,84 @@
-export type UserRole = "admin" | "inventory_manager" | "warehouse_staff" | "assistant";
+// User roles exactly as used in backend
+export type UserRole = "ADMIN" | "INVENTORY_MANAGER" | "WAREHOUSE_STAFF";
 
-export type OperationType = "receipt" | "delivery" | "internal_transfer" | "adjustment";
+// Operation type based on backend model (uppercase)
+export type OperationType = "RECEIPT" | "DELIVERY" | "INTERNAL_TRANSFER" | "ADJUSTMENT";
 
-export type OperationStatus = "pending" | "in_progress" | "completed" | "cancelled";
+// Operation status based on backend (only 3 statuses)
+export type OperationStatus = "WAITING" | "DONE" | "CANCELED";
 
+// Product Interface
 export interface Product {
   id: string;
   name: string;
   sku: string;
-  category: string;
-  quantity: number;
+  category?: string;
+  uom: string;
   reorderLevel: number;
-  unitPrice: number;
-  warehouse: string;
+  currentStock?: number; // Calculated from Stock model
 }
 
+// Warehouse Interface
 export interface Warehouse {
   id: string;
   name: string;
-  location: string;
-  capacity: number;
-  currentStock: number;
+  code: string;
+  locations?: string[];
 }
 
+// Stock Movement for Operations
 export interface Operation {
   id: string;
   type: OperationType;
   status: OperationStatus;
-  warehouse: string;
-  productName: string;
-  quantity: number;
+  user?: string; // Performed by user
+  supplier?: string; // For RECEIPT
+  customer?: string; // For DELIVERY
+  sourceWarehouse?: string;
+  destinationWarehouse?: string;
+  sourceLocation?: string;
+  destinationLocation?: string;
+  items: {
+    product: string;
+    quantity: number;
+  }[];
   date: string;
-  reference?: string;
 }
 
+// Dashboard Analytics
 export interface DashboardStats {
-  totalProducts: number;
-  lowStock: number;
+  totalProductsInStock: number;
+  lowStockCount: number;
   pendingReceipts: number;
   pendingDeliveries: number;
-  internalTransfers: number;
+  pendingInternalTransfers: number;
 }
 
+// Stock Alert Table
 export interface StockAlert {
   id: string;
-  productName: string;
+  product: string;
   sku: string;
   currentStock: number;
   reorderLevel: number;
-  warehouse: string;
+  warehouse?: string;
   severity: "critical" | "warning" | "low";
 }
 
+// Customer Interface
 export interface Customer {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  address: string;
+  phone?: string;
+  address?: string;
 }
 
+// Supplier Interface
 export interface Supplier {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  products: string[];
+  phone?: string;
+  products?: string[];
 }

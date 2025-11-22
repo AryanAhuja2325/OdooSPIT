@@ -9,9 +9,9 @@ const auth = (roles = []) => {
 
             const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-            if (!decoded?._id) return res.status(401).json({ message: "Invalid token" });
+            if (!decoded?.id) return res.status(401).json({ message: "Invalid token" });
 
-            const u = await User.findById(decoded._id);
+            const u = await User.findById(decoded.id);
 
             req.user = u;
 

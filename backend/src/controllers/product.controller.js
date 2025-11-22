@@ -1,4 +1,5 @@
 const Product = require("../models/product.model");
+const Stock = require("../models/stock.model"); // 👈 import Stock
 
 async function createProduct(req, res) {
     try {
@@ -17,11 +18,28 @@ async function createProduct(req, res) {
 async function getProducts(req, res) {
     try {
         const products = await Product.find().sort({ createdAt: -1 });
-        res.status(200).json(products);
+
+        const updatedProducts = await Promise.all(
+            products.map(async (product) => {
+                // Get total stock for this product
+                const stockData = await Stock.aggregate([
+                    { $match: { product: product._id } },
+                    { $group: { _id: null, totalStock: { $sum: "$quantity" } } },
+                ]);
+
+                return {
+                    ...product._doc,
+                    totalStock: stockData.length ? stockData[0].totalStock : 0,
+                };
+            })
+        );
+
+        res.status(200).json(updatedProducts);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 }
+
 
 async function getProduct(req, res) {
     try {

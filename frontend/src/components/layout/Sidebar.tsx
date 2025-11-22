@@ -1,15 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
-import { 
-  LayoutDashboard, 
-  Package, 
-  ArrowLeftRight, 
-  Warehouse, 
-  Users, 
+import {
+  LayoutDashboard,
+  Package,
+  ArrowLeftRight,
+  Warehouse,
+  Users,
   TruckIcon,
-  X
+  X,
+  Logs
 } from "lucide-react";
+
 
 interface SidebarProps {
   userRole: UserRole;
@@ -19,18 +21,19 @@ interface SidebarProps {
 
 const getNavItems = (role: UserRole) => {
   const baseItems = [
-    { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "inventory_manager", "warehouse_staff"] },
-    { to: "/operations", label: "Operations", icon: ArrowLeftRight, roles: ["admin", "inventory_manager", "warehouse_staff"] },
+    { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] },
+    { to: "/operations", label: "Operations", icon: ArrowLeftRight, roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] },
+    { to: '/stock-logs', label: "Stock Logs", icon: Logs, roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] }
   ];
 
   const managementItems = [
-    { to: "/products", label: "Products", icon: Package, roles: ["admin", "inventory_manager"] },
-    { to: "/warehouses", label: "Warehouses", icon: Warehouse, roles: ["admin", "inventory_manager"] },
-    { to: "/customers", label: "Customers", icon: Users, roles: ["admin", "inventory_manager"] },
-    { to: "/suppliers", label: "Suppliers", icon: TruckIcon, roles: ["admin", "inventory_manager"] },
+    { to: "/products", label: "Products", icon: Package, roles: ["ADMIN", "INVENTORY_MANAGER"] },
+    { to: "/warehouses", label: "Warehouses", icon: Warehouse, roles: ["ADMIN", "INVENTORY_MANAGER"] },
+    { to: "/customers", label: "Customers", icon: Users, roles: ["ADMIN", "INVENTORY_MANAGER"] },
+    { to: "/suppliers", label: "Suppliers", icon: TruckIcon, roles: ["ADMIN", "INVENTORY_MANAGER"] },
   ];
 
-  return [...baseItems, ...managementItems].filter(item => 
+  return [...baseItems, ...managementItems].filter((item) =>
     item.roles.includes(role)
   );
 };
@@ -42,17 +45,19 @@ export const Sidebar = ({ userRole, isOpen, onClose }: SidebarProps) => {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 transform bg-sidebar transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-sidebar transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
@@ -97,7 +102,10 @@ export const Sidebar = ({ userRole, isOpen, onClose }: SidebarProps) => {
           {/* Footer */}
           <div className="border-t border-sidebar-border p-4">
             <div className="text-xs text-sidebar-foreground/70">
-              Role: <span className="font-medium text-sidebar-foreground capitalize">{userRole.replace("_", " ")}</span>
+              Role:{" "}
+              <span className="font-medium text-sidebar-foreground capitalize">
+                {userRole.replace("_", " ")}
+              </span>
             </div>
           </div>
         </div>
