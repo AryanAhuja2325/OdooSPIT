@@ -5,6 +5,13 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const { connect } = require("./config/db");
 
+const userRouter = require('./routes/user.route');
+const productRouter = require('./routes/product.route');
+const wahrehouseRouter = require('./routes/warehouse.route');
+const operationsRouter = require('./routes/operations.route');
+const adminRouter = require('./routes/admin.route');
+const stockRouter = require('./routes/stock.route');
+const analyticsRouter = require('./routes/analytics.route');
 
 const app = express();
 
@@ -18,6 +25,14 @@ app.use(
     })
 );
 app.use(cookieParser());
+
+app.use('/api/user', userRouter);
+app.use('/api/product', productRouter);
+app.use('/api/warehouse', wahrehouseRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/operations', operationsRouter);
+app.use('/api/stock', stockRouter);
+app.use('/api/analytics', analyticsRouter);
 
 app.use((req, res, next) => {
     console.log("Incoming:", req.method, req.url);
