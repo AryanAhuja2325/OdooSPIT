@@ -1,11 +1,22 @@
-// src/context/AuthContext.tsx
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    ReactNode,
+} from "react";
+
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: "WAREHOUSE_STAFF" | "INVENTORY_MANAGER" | "ADMIN";
+}
 
 interface AuthContextProps {
     isAuthenticated: boolean;
-    user: any;
-    login: (token: string, userData?: any) => void;
+    user: User | null;
+    login: (token: string, userData?: User) => void;
     logout: () => void;
 }
 
@@ -13,33 +24,54 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [user, setUser] = useState<any>(null);
-    const navigate = useNavigate();
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
 
-    // Check auth when app loads
+    // Restore authentication state
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            setIsAuthenticated(true);
-            // Optionally get user profile from API
+        try {
+            const token = localStorage.getItem("token");
+            const storedUser = localStorage.getItem("user");
+
+            if (
+                token &&
+                storedUser &&
+                storedUser !== "undefined" &&
+                storedUser !== "null"
+            ) {
+                setUser(JSON.parse(storedUser));
+                setIsAuthenticated(true);
+            }
+        } catch (error) {
+            console.error("Error restoring user from localStorage:", error);
+            localStorage.removeItem("user");
+        } finally {
+            setLoading(false);
         }
     }, []);
 
     // Login handler
-    const login = (token: string, userData?: any) => {
+    const login = (token: string, userData?: User) => {
         localStorage.setItem("token", token);
+        if (userData) {
+            localStorage.setItem("user", JSON.stringify(userData));
+            setUser(userData);
+        } else {
+            console.warn("⚠ No user data provided during login");
+        }
         setIsAuthenticated(true);
-        if (userData) setUser(userData);
-        navigate("/"); // Redirect to dashboard after login
     };
 
     // Logout handler
     const logout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setIsAuthenticated(false);
         setUser(null);
-        navigate("/login");
     };
+
+    // 🔁 Show loading only during restore (not on login/signout)
+    if (loading) return <div>Loading authentication...</div>;
 
     return (
         <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
@@ -48,9 +80,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
-// Custom hook
+// Custom hook to use auth context
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) throw new Error("useAuth must be used within AuthProvider");
+    if (!context)
+        throw new Error("useAuth must be used within an AuthProvider");
     return context;
 };

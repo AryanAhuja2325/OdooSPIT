@@ -1,6 +1,7 @@
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "@/context/AuthContext"; // 👈 make sure this is correct
 
 interface LoginForm {
     email: string;
@@ -10,7 +11,8 @@ interface LoginForm {
 const Login = () => {
     const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
     const [error, setError] = useState<string>("");
-    const navigate = useNavigate(); // 👈 React Router navigation
+    const navigate = useNavigate();
+    const { login } = useAuth(); // 👈 IMPORTANT
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,16 +21,13 @@ const Login = () => {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         try {
-            const res = await axios.post(
-                `http://localhost:8000/api/user/login`,
-                form,
-                { withCredentials: true }
-            );
+            const res = await axios.post("http://localhost:8000/api/user/login", form, {
+                withCredentials: true,
+            });
 
-            localStorage.setItem("token", res.data.token);
-
-            // 👇 Correct navigation
-            navigate("/"); // Dashboard is at "/"
+            // Passing user & token to context
+            login(res.data.token, res.data.user); // 👈 Now works
+            navigate("/");
         } catch (err: any) {
             setError(err.response?.data?.message || "Login failed");
         }
@@ -67,10 +66,7 @@ const Login = () => {
                 </form>
 
                 <p className="text-center mt-4 text-sm">
-                    Don't have an account?{" "}
-                    <a href="/signup" className="text-blue-600">
-                        Create one
-                    </a>
+                    Don't have an account? <a href="/signup" className="text-blue-600">Create one</a>
                 </p>
             </div>
         </div>
